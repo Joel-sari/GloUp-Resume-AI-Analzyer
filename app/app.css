@@ -153,10 +153,13 @@ form {
   }
 
   .uplader-drag-area {
-    @apply relative p-8 text-center transition-all duration-700 cursor-pointer bg-surface border border-dashed border-border hover:border-accent/50 rounded-2xl min-h-[208px];
+    @apply relative flex items-center justify-center p-8 text-center transition-all duration-300 cursor-pointer bg-surface border border-dashed border-border hover:border-accent/50 hover:bg-surface-2 rounded-2xl min-h-[200px] w-full;
+    &.is-dragging {
+      @apply border-accent bg-accent/10 shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-accent)_20%,transparent)];
+    }
   }
   .uploader-selected-file {
-    @apply flex items-center justify-between p-3 bg-surface-2 border border-border rounded-2xl;
+    @apply flex items-center justify-between gap-3 p-3 pr-4 bg-surface-2 border border-border rounded-2xl w-full;
   }
 }
 
