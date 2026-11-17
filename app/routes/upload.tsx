@@ -158,7 +158,7 @@ const Upload = () => {
       setStatusText("Analysis complete!");
 
       console.log(resumeData);
-      // TODO: navigate(`/resume/${uuid}`) once the results route exists
+      navigate(`/resume/${uuid}`);
     } catch (err) {
       console.error(err);
       fail(err instanceof Error ? err.message : "Something went wrong during analysis.");
@@ -186,6 +186,7 @@ const Upload = () => {
 
 
     console.log({ companyName, jobTitle, jobDescription });
+    
   };
 
   return (
