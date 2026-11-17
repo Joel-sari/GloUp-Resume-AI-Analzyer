@@ -353,7 +353,14 @@ export const usePuterStore = create<PuterStore>((set, get) => {
           ],
         },
       ],
-      { model: "claude-sonnet-4" },
+      {
+        model: "claude-haiku-5-5",
+        // Resume scoring is a rubric task; medium effort keeps runs fast.
+        reasoning_effort: "medium",
+        max_tokens: 8192,
+        // Always return message.content as a plain string.
+        normalize: true,
+      },
     ) as Promise<AIResponse | undefined>;
   };
 

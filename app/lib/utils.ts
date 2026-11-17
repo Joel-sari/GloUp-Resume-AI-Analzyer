@@ -33,3 +33,6 @@ export function formatSize(bytes: number, decimals = 1): string {
   const text = value.toFixed(decimals).replace(/\.?0+$/, "");
   return `${text} ${SIZE_UNITS[exponent]}`;
 }
+
+
+export const generateUUID = () => crypto.randomUUID();
