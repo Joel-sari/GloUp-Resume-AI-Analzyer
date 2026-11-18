@@ -357,7 +357,8 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         model: "claude-haiku-5-5",
         // Resume scoring is a rubric task; medium effort keeps runs fast.
         reasoning_effort: "medium",
-        max_tokens: 8192,
+        // v2 feedback (rewrites, keywords, requirements) is longer than v1.
+        max_tokens: 12000,
         // Always return message.content as a plain string.
         normalize: true,
       },

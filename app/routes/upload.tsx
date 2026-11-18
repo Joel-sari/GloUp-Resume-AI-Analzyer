@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
-import FileUploader from "~/components/FileUploader";
-import Navbar from "~/components/Navbar";
-import AuroraBackground from "~/components/AuroraBackground";
-import AnalysisProgress, { type AnalysisStep } from "~/components/AnalysisProgress";
+import FileUploader from "~/components/upload/FileUploader";
+import Navbar from "~/components/layout/Navbar";
+import AuroraBackground from "~/components/layout/AuroraBackground";
+import AnalysisProgress, { type AnalysisStep } from "~/components/upload/AnalysisProgress";
 import { usePuterStore } from "~/lib/puter";
 import { useNavigate } from "react-router";
 import { convertPdfToImage } from "~/lib/pdftoimg";
+import { computeChecks, extractPdfText } from "~/lib/resumeChecks";
+import { normalizeFeedback, parseFeedbackJSON } from "~/lib/feedback";
 import { generateUUID } from "~/lib/utils";
-import { prepareInstructions } from "~/constants";
+import { FEEDBACK_SCHEMA_VERSION, prepareInstructions } from "~/constants";
 
 export function meta() {
   return [
@@ -101,7 +103,11 @@ const Upload = () => {
       if (!uploadedFile) return fail("Failed to upload the resume.");
 
       goToStep("convert", "Converting PDF to image...");
-      const imageFile = await convertPdfToImage(file);
+      // render the preview and read the text (for quick checks) in parallel
+      const [imageFile, pdfText] = await Promise.all([
+        convertPdfToImage(file),
+        extractPdfText(file),
+      ]);
       if (!imageFile.file) return fail(imageFile.error ?? "Failed to convert the PDF.");
 
       goToStep("preview", "Uploading the preview...");
@@ -110,14 +116,18 @@ const Upload = () => {
 
       goToStep("save", "Saving details...");
       const uuid = generateUUID();
-      const resumeData = {
+      const resumeData: Resume = {
         id: uuid,
         resumePath: uploadedFile.path,
         imagePath: uploadedImage.path,
         companyName,
         jobTitle,
         jobDescription,
-        feedback: null as Feedback | null,
+        feedback: null,
+        // text checks are a bonus: if extraction failed, the page just hides them
+        checks: pdfText ? computeChecks(pdfText) : undefined,
+        createdAt: Date.now(),
+        schemaVersion: FEEDBACK_SCHEMA_VERSION,
       };
       // kv is puters key value storage
       const kvKey = `resume:${uuid}`;
@@ -147,9 +157,10 @@ const Upload = () => {
           ? content
           : (content.find((b: { type?: string }) => b?.type === "text")?.text ?? "");
 
-      // strip ```json fences if the model added them anyway
-      const cleaned = feedbackText.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
-      resumeData.feedback = JSON.parse(cleaned) as Feedback;
+      // parse (tolerates fences / stray prose) and validate the shape
+      const parsed = normalizeFeedback(parseFeedbackJSON(feedbackText));
+      if (!parsed) return fail("The AI's response wasn't in the expected format. Please try again.");
+      resumeData.feedback = parsed;
 
       await kv.set(kvKey, JSON.stringify(resumeData));
 

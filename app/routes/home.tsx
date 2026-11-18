@@ -1,12 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { MotionConfig, motion } from "motion/react";
 import type { Route } from "./+types/home";
-import { resumes } from "~/constants";
 import { usePuterStore } from "~/lib/puter";
-import Navbar from "~/components/Navbar";
-import ResumeCard from "~/components/ResumeCard";
-import AuroraBackground from "~/components/AuroraBackground";
+import Navbar from "~/components/layout/Navbar";
+import ResumeCard from "~/components/home/ResumeCard";
+import AuroraBackground from "~/components/layout/AuroraBackground";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -26,21 +25,53 @@ const fadeUp = (delay: number) => ({
 });
 
 export default function Home() {
-  const { auth } = usePuterStore();
+  const { auth, isLoading, kv } = usePuterStore();
   const navigate = useNavigate();
   const username = auth.user?.username;
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [loadingResumes, setLoadingResumes] = useState(true);
 
   useEffect(() => {
     // not authenticated → back to auth, remembering where to return to
-    if (!auth.isAuthenticated) navigate("/auth?next=/");
-  }, [auth.isAuthenticated, navigate]);
+    // (wait for Puter's startup check first, or every visit bounces once)
+    if (!isLoading && !auth.isAuthenticated) navigate("/auth?next=/");
+  }, [isLoading, auth.isAuthenticated, navigate]);
+
+  // load every saved analysis from Puter's key-value store
+  useEffect(() => {
+    if (isLoading || !auth.isAuthenticated) return;
+    let cancelled = false;
+
+    const loadResumes = async () => {
+      setLoadingResumes(true);
+      const items = ((await kv.list("resume:*", true)) ?? []) as KVItem[];
+      const parsed = items.flatMap((item) => {
+        try {
+          return [JSON.parse(item.value) as Resume];
+        } catch {
+          return []; // skip a corrupted record rather than breaking the page
+        }
+      });
+      // newest first; records from before createdAt existed go last
+      parsed.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+      if (!cancelled) setResumes(parsed);
+    };
+
+    loadResumes()
+      .catch((err) => console.error("Could not load resumes", err))
+      .finally(() => !cancelled && setLoadingResumes(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, auth.isAuthenticated]);
 
   const count = resumes.length;
-  const scores = resumes.map((r) => r.feedback.overallScore);
-  const average = count
-    ? Math.round(scores.reduce((a, b) => a + b, 0) / count)
+  // stats only count analyses that finished
+  const scores = resumes.flatMap((r) => (r.feedback ? [r.feedback.overallScore] : []));
+  const average = scores.length
+    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
     : 0;
-  const best = count ? Math.max(...scores) : 0;
+  const best = scores.length ? Math.max(...scores) : 0;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -69,7 +100,7 @@ export default function Home() {
                 Review your submissions and check AI-powered feedback.
               </motion.h2>
 
-              {count > 0 && (
+              {scores.length > 0 && (
                 <motion.div
                   {...fadeUp(0.3)}
                   className="flex flex-wrap items-center justify-center gap-3"
@@ -95,7 +126,22 @@ export default function Home() {
               )}
             </div>
 
-            {count > 0 ? (
+            {loadingResumes ? (
+              <div className="resumes-section" aria-busy="true">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="resume-card animate-pulse border border-border">
+                    <div className="flex justify-between">
+                      <div className="flex flex-col gap-2">
+                        <div className="h-6 w-40 rounded-full bg-surface-2" />
+                        <div className="h-4 w-28 rounded-full bg-surface-2" />
+                      </div>
+                      <div className="h-[100px] w-[100px] rounded-full bg-surface-2" />
+                    </div>
+                    <div className="flex-1 rounded-2xl bg-surface-2/60" />
+                  </div>
+                ))}
+              </div>
+            ) : count > 0 ? (
               <div className="resumes-section">
                 {resumes.map((resume, i) => (
                   <motion.div

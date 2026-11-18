@@ -12,7 +12,7 @@ let loadPromise: Promise<PdfJsLib> | null = null;
 // pdf.js touches browser globals, so it is loaded lazily on the client only
 // (this app is server-rendered by React Router). The promise is cached so the
 // library and its worker are only set up once.
-async function loadPdfJs(): Promise<PdfJsLib> {
+export async function loadPdfJs(): Promise<PdfJsLib> {
   if (pdfjsLib) return pdfjsLib;
   if (loadPromise) return loadPromise;
 

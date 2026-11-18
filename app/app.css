@@ -148,6 +148,11 @@ form {
     @apply flex flex-row items-center justify-center py-1 px-2 gap-4 rounded-[96px];
   }
 
+  /* glass card used by the review sections on /resume/:id */
+  .review-card {
+    @apply flex flex-col gap-6 rounded-[28px] border border-border bg-surface/80 p-6 backdrop-blur-xl sm:p-8 scroll-mt-8;
+  }
+
   .form-div {
     @apply flex flex-col gap-2 w-full items-start;
   }
@@ -203,5 +208,136 @@ form {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* ---------- review page effects ---------- */
+
+/* Cursor spotlight on cards. useCardSpotlight() sets --x / --y (px, relative
+   to each card); ::before lights up the border, ::after adds a faint inner
+   glow. isolate keeps the glow behind the card's content. */
+.review-card {
+  position: relative;
+  isolation: isolate;
+}
+.review-card::before,
+.review-card::after {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.review-card::before {
+  inset: -1px;
+  padding: 1px;
+  background: radial-gradient(
+    420px circle at var(--x, 50%) var(--y, 50%),
+    color-mix(in oklab, var(--color-pink) 70%, transparent),
+    color-mix(in oklab, var(--color-violet) 40%, transparent) 30%,
+    transparent 60%
+  );
+  /* show the gradient only in the 1px border ring */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.review-card::after {
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    600px circle at var(--x, 50%) var(--y, 50%),
+    color-mix(in oklab, var(--color-accent) 9%, transparent),
+    transparent 45%
+  );
+}
+.review-card[data-lit="true"]::before,
+.review-card[data-lit="true"]::after {
+  opacity: 1;
+}
+
+/* Rotating gradient ring (score card). Needs @property so the angle can animate. */
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.conic-ring {
+  background: conic-gradient(
+    from var(--angle),
+    var(--color-violet),
+    var(--color-pink),
+    var(--color-orange),
+    color-mix(in oklab, var(--color-violet) 20%, transparent) 70%,
+    var(--color-violet)
+  );
+  animation: spin-angle 7s linear infinite;
+}
+@keyframes spin-angle {
+  to {
+    --angle: 360deg;
+  }
+}
+
+/* Flash cards */
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conic-ring {
+    animation: none;
+  }
+}
+
+/* "Glowed Up" headline: brand gradient with a light band that sweeps across
+   every few seconds. The image is two copies of the gradient with a white
+   band between them, so it rests on an identical gradient at both ends and
+   the loop is seamless. */
+.glow-shimmer {
+  /* each word sets --from/--via/--to to its slice of the brand gradient,
+     so separate words still read as one continuous gradient */
+  background-image: linear-gradient(
+    100deg,
+    var(--from, var(--color-violet)) 0%,
+    var(--via, var(--color-pink)) 22%,
+    var(--to, var(--color-orange)) 44%,
+    #fff 50%,
+    var(--from, var(--color-violet)) 56%,
+    var(--via, var(--color-pink)) 78%,
+    var(--to, var(--color-orange)) 100%
+  );
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: glow-sweep 6s ease-in-out 1.6s infinite;
+}
+@keyframes glow-sweep {
+  0%,
+  70% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0% 0;
+  }
+}
+/* "Glowed" = violet → pink, "Up" = pink → orange */
+.glow-from-start {
+  --from: var(--color-violet);
+  --via: color-mix(in oklab, var(--color-violet) 45%, var(--color-pink));
+  --to: var(--color-pink);
+}
+.glow-from-end {
+  --from: var(--color-pink);
+  --via: color-mix(in oklab, var(--color-pink) 45%, var(--color-orange));
+  --to: var(--color-orange);
+}
+@media (prefers-reduced-motion: reduce) {
+  .glow-shimmer {
+    animation: none;
   }
 }

@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { MotionConfig, motion } from "motion/react";
 import { usePuterStore } from "~/lib/puter";
-import GlowUpDemo from "~/components/GlowUpDemo";
-import AuroraBackground from "~/components/AuroraBackground";
+import GlowUpDemo from "~/components/auth/GlowUpDemo";
+import AuroraBackground from "~/components/layout/AuroraBackground";
 
 export function meta() {
   return [

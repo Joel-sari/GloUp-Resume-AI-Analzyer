@@ -1,7 +1,15 @@
-import { motion, useReducedMotion } from "motion/react";
+import { useEffect } from "react";
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from "motion/react";
 
 /**
- * Slow-drifting aurora blobs and twinkling stars, shared by every page.
+ * Slow-drifting aurora blobs, a faint dot grid, film grain, twinkling stars
+ * and a soft glow that trails the cursor. Shared by every page.
  * Render it as the first child of a `relative overflow-hidden` container
  * and put the page content in a `relative` sibling after it.
  */
@@ -22,8 +30,30 @@ const STARS = [
   { x: 96, y: 88, s: 1.5, d: 1.3 },
 ];
 
+// Static SVG noise, tiled. Adds texture so the gradients don't look flat/banded.
+const GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
 export default function AuroraBackground() {
   const reduced = useReducedMotion();
+
+  // cursor glow (page coordinates, so it works on long scrolling pages)
+  const mx = useMotionValue(-1000);
+  const my = useMotionValue(-1000);
+  const sx = useSpring(mx, { stiffness: 60, damping: 20 });
+  const sy = useSpring(my, { stiffness: 60, damping: 20 });
+  const glow = useMotionTemplate`radial-gradient(520px circle at ${sx}px ${sy}px, rgba(168,85,247,0.13), transparent 60%)`;
+
+  useEffect(() => {
+    if (reduced) return;
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      mx.set(e.pageX);
+      my.set(e.pageY);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
+  }, [reduced, mx, my]);
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -42,6 +72,23 @@ export default function AuroraBackground() {
         animate={reduced ? undefined : { x: [0, 60, 0], y: [0, -50, 0] }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
+
+      {/* dot grid, fading out toward the bottom */}
+      <div
+        className="absolute inset-0 opacity-60"
+        style={{
+          backgroundImage: "radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+          maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%)",
+        }}
+      />
+
+      {/* glow that trails the cursor */}
+      {!reduced && <motion.div className="absolute inset-0" style={{ backgroundImage: glow }} />}
+
+      {/* film grain */}
+      <div className="absolute inset-0 opacity-[0.05] mix-blend-overlay" style={{ backgroundImage: GRAIN }} />
 
       {STARS.map((star, i) => (
         <motion.span

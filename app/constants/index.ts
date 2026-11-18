@@ -91,49 +91,43 @@ export const resumes: Resume[] = [
   },
 ];
 
+// Bump when the Feedback shape changes, so the UI can tell old records apart.
+// v1: scores + tips. v2: headline, impact, quote/suggestion, keywords, requirements.
+export const FEEDBACK_SCHEMA_VERSION = 2;
+
 export const AIResponseFormat = `
-      interface Feedback {
-      overallScore: number; //max 100
-      ATS: {
-        score: number; //rate based on ATS suitability
-        tips: {
-          type: "good" | "improve";
-          tip: string; //give 3-4 tips
-        }[];
-      };
-      toneAndStyle: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-      content: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-      structure: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-      skills: {
-        score: number; //max 100
-        tips: {
-          type: "good" | "improve";
-          tip: string; //make it a short "title" for the actual explanation
-          explanation: string; //explain in detail here
-        }[]; //give 3-4 tips
-      };
-    }`;
+interface Feedback {
+  overallScore: number; // 0-100, your holistic judgment of the whole resume
+  headline: string; // ONE sentence (max ~25 words) naming this resume's biggest strength and biggest gap, specific to this candidate
+  ATS: Category; // parseability, keyword match, contact info
+  toneAndStyle: Category;
+  content: Category;
+  structure: Category;
+  skills: Category;
+  keywords: {
+    matched: string[]; // important keywords/skills from the job posting that DO appear in the resume
+    missing: string[]; // important keywords/skills from the job posting that do NOT appear in the resume
+  };
+  requirements: {
+    requirement: string; // one concrete requirement from the posting, e.g. "3+ years of React"
+    status: "met" | "partial" | "missing";
+    evidence: string; // one short sentence: where the resume shows it, or what is lacking
+  }[];
+}
+
+interface Category {
+  score: number; // 0-100
+  tips: Tip[]; // 3-4 tips
+}
+
+interface Tip {
+  type: "good" | "improve";
+  tip: string; // short, specific title
+  explanation: string; // 1-3 sentences explaining why and exactly what to change
+  impact?: "high" | "medium" | "low"; // REQUIRED when type is "improve": how much fixing it would move the score
+  quote?: string; // the exact text from the resume this tip is about, copied verbatim
+  suggestion?: string; // when the tip is about specific wording: the rewritten version of quote
+}`;
 
 export const prepareInstructions = ({
   jobTitle,
@@ -154,9 +148,15 @@ ${jobDescription.trim() || "not provided"}
 Score and advise relative to this role. Pull concrete keywords, skills, and requirements from the posting and check whether the resume reflects them.`
     : `No target job was provided. Evaluate the resume on its own merits as a general application in the candidate's apparent field.`;
 
+  const jobRules = hasJob
+    ? `Rules for keywords and requirements:
+- keywords: up to 12 matched and up to 12 missing. Use the posting's own wording for each term (e.g. "TypeScript", "CI/CD", "stakeholder management"). Order each list by importance to the role. Only count a keyword as matched if it, or an obvious synonym, appears in the resume.
+- requirements: the 4-8 most important requirements in the posting (must-haves first). "met" means the resume clearly shows it, "partial" means related experience but not a clear match, "missing" means no evidence.`
+    : `No job was provided, so return "keywords": { "matched": [], "missing": [] } and "requirements": [].`;
+
   return `You are a senior technical recruiter and ATS (Applicant Tracking System) specialist. You have reviewed thousands of resumes and know exactly why candidates get filtered out or called back.
 
-Analyze the attached resume image and produce honest, specific, actionable feedback.
+Analyze the attached resume and produce honest, specific, actionable feedback.
 
 ${jobContext}
 
@@ -176,8 +176,14 @@ What to evaluate:
 
 Rules for tips:
 - Give 3-4 tips per category. Mix "good" and "improve" as the resume deserves, but lead with the most impactful improvements.
-- Each tip title should be short and specific. Each explanation must reference the actual content of this resume (quote or paraphrase the line) and say exactly how to change it. Avoid generic advice that could apply to any resume.
+- Each tip title should be short and specific. Each explanation must reference the actual content of this resume and say exactly how to change it. Avoid generic advice that could apply to any resume.
 - If the resume is strong in a category, say so with a "good" tip and explain what makes it work.
+- Every "improve" tip needs an impact: "high" if it could cost the candidate an interview, "medium" if it noticeably weakens the resume, "low" for polish.
+- When a tip is about a specific line (a bullet, the summary, a heading), copy that line into quote exactly as written. If the fix is a rewrite, put the improved line in suggestion.
+- Never invent facts in a suggestion. Do not add numbers, tools, employers or achievements the resume does not state. Where a number would make the line stronger but you don't know it, use a bracketed placeholder the candidate fills in, e.g. "Cut page load time by [X]% by ...".
+- Leave quote and suggestion out for tips about the resume as a whole (layout, length, section order).
+
+${jobRules}
 
 Output format:
 Respond with a single JSON object that matches this TypeScript interface exactly:

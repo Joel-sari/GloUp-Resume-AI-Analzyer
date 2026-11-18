@@ -1,4 +1,6 @@
 import { useId } from "react";
+import { motion } from "motion/react";
+import AnimatedNumber from "~/components/ui/AnimatedNumber";
 
 const ScoreCircle = ({ score = 75 }: { score: number }) => {
   const radius = 40;
@@ -33,7 +35,8 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
             <stop offset="100%" stopColor="#f97316" />
           </linearGradient>
         </defs>
-        <circle
+        {/* fills from empty the first time it scrolls into view */}
+        <motion.circle
           cx="50"
           cy="50"
           r={normalizedRadius}
@@ -41,14 +44,17 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
           strokeWidth={stroke}
           fill="transparent"
           strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
+          initial={{ strokeDashoffset: circumference }}
+          whileInView={{ strokeDashoffset }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
           strokeLinecap="round"
           style={{ filter: "drop-shadow(0 0 6px rgba(236,72,153,0.45))" }}
         />
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-lg font-bold leading-none text-ink">{score}</span>
+        <AnimatedNumber value={score} className="text-lg font-bold leading-none text-ink" />
         <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted">
           / 100
         </span>
