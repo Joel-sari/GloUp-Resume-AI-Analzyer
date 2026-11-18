@@ -97,26 +97,11 @@ form {
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-violet via-pink to-orange;
   }
-  .gradient-border {
-    @apply bg-gradient-to-b from-light-blue-100 to-light-blue-200 p-4 rounded-2xl;
-  }
   .primary-button {
     @apply primary-gradient text-white rounded-full px-4 py-2 cursor-pointer w-full;
   }
-  .resume-nav {
-    @apply flex flex-row justify-between items-center p-4 border-b border-border;
-  }
-  .resume-summary {
-    @apply flex flex-row items-center justify-center p-4 gap-4;
-    .category {
-      @apply flex flex-row gap-2 items-center bg-surface-2 border border-border rounded-2xl p-4 w-full justify-between;
-    }
-  }
   .back-button {
     @apply flex flex-row items-center gap-2 border border-border text-muted hover:text-ink hover:border-accent/50 rounded-lg p-2 shadow-sm transition-colors;
-  }
-  .auth-button {
-    @apply primary-gradient rounded-full py-4 px-8 cursor-pointer w-[600px] max-md:w-full text-3xl font-semibold text-white;
   }
   .main-section {
     @apply flex flex-col items-center gap-8 pt-12 max-sm:mx-2 mx-15 pb-5;
@@ -124,33 +109,13 @@ form {
   .page-heading {
     @apply flex flex-col items-center gap-8 max-w-4xl text-center max-sm:gap-4;
   }
-  .resumes-section {
-    @apply flex flex-wrap max-md:flex-col max-md:gap-4 gap-6 items-start max-md:items-center w-full max-w-[1850px] justify-evenly;
-  }
-
-  .resume-card {
-    @apply relative flex flex-col gap-5 h-[560px] w-[350px] lg:w-[430px] xl:w-[490px] bg-surface/90 backdrop-blur-xl rounded-[25px] p-5;
-  }
-
-  .resume-card-header {
-    @apply flex flex-row gap-3 justify-between items-center max-sm:flex-col max-sm:text-center;
-  }
-
-  .feedback-section {
-    @apply flex flex-col gap-8 w-1/2 px-8 max-lg:w-full py-6;
-  }
-
-  .navbar {
-    @apply flex flex-row justify-between items-center gap-4 bg-surface/70 backdrop-blur-xl border border-border rounded-full py-3 pl-7 pr-3 w-full max-w-[1200px] mx-auto shadow-[0_20px_60px_-30px_rgba(168,85,247,0.5)];
-  }
-
   .score-badge {
     @apply flex flex-row items-center justify-center py-1 px-2 gap-4 rounded-[96px];
   }
 
   /* glass card used by the review sections on /resume/:id */
   .review-card {
-    @apply flex flex-col gap-6 rounded-[28px] border border-border bg-surface/80 p-6 backdrop-blur-xl sm:p-8 scroll-mt-8;
+    @apply flex flex-col gap-6 rounded-[28px] border border-border bg-surface/80 p-6 backdrop-blur-xl sm:p-8 scroll-mt-36;
   }
 
   .form-div {
@@ -213,15 +178,18 @@ form {
 
 /* ---------- review page effects ---------- */
 
-/* Cursor spotlight on cards. useCardSpotlight() sets --x / --y (px, relative
-   to each card); ::before lights up the border, ::after adds a faint inner
+/* Cursor spotlight on cards (.review-card or .spotlight-card).
+   useCardSpotlight() sets --x / --y (px, relative to each card); ::before lights up the border, ::after adds a faint inner
    glow. isolate keeps the glow behind the card's content. */
-.review-card {
+.review-card,
+.spotlight-card {
   position: relative;
   isolation: isolate;
 }
 .review-card::before,
-.review-card::after {
+.review-card::after,
+.spotlight-card::before,
+.spotlight-card::after {
   content: "";
   position: absolute;
   border-radius: inherit;
@@ -229,7 +197,8 @@ form {
   opacity: 0;
   transition: opacity 0.4s ease;
 }
-.review-card::before {
+.review-card::before,
+.spotlight-card::before {
   inset: -1px;
   padding: 1px;
   background: radial-gradient(
@@ -243,7 +212,8 @@ form {
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
-.review-card::after {
+.review-card::after,
+.spotlight-card::after {
   inset: 0;
   z-index: -1;
   background: radial-gradient(
@@ -253,7 +223,9 @@ form {
   );
 }
 .review-card[data-lit="true"]::before,
-.review-card[data-lit="true"]::after {
+.review-card[data-lit="true"]::after,
+.spotlight-card[data-lit="true"]::before,
+.spotlight-card[data-lit="true"]::after {
   opacity: 1;
 }
 
@@ -339,5 +311,81 @@ form {
 @media (prefers-reduced-motion: reduce) {
   .glow-shimmer {
     animation: none;
+  }
+}
+
+/* ---------- animated background light (AuroraBackground) ----------
+   Each element sets --dur, --delay, --peak (max opacity) inline; sparkles
+   also set --rot (start angle) and --tint, motes set --drift (sideways travel). Only transform + opacity animate, so
+   it stays cheap even with a few dozen of them. */
+.bg-sparkle {
+  position: absolute;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: bg-sparkle var(--dur, 8s) ease-in-out var(--delay, 0s) infinite;
+}
+.bg-sparkle svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--tint, #fff);
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--tint, #fff) 85%, transparent));
+}
+/* same drift as before (fade in, slide down, fade out) plus a slow spin
+   and a twinkle (shrink and grow back) halfway through */
+@keyframes bg-sparkle {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) rotate(var(--rot, 0deg)) scale(0.4);
+  }
+  30% {
+    opacity: var(--peak, 0.7);
+    transform: translateY(5px) rotate(calc(var(--rot, 0deg) + 25deg)) scale(1);
+  }
+  50% {
+    transform: translateY(25px) rotate(calc(var(--rot, 0deg) + 45deg)) scale(0.65);
+  }
+  70% {
+    opacity: calc(var(--peak, 0.7) * 0.6);
+    transform: translateY(45px) rotate(calc(var(--rot, 0deg) + 65deg)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(80px) rotate(calc(var(--rot, 0deg) + 90deg)) scale(0.4);
+  }
+}
+
+.bg-mote {
+  position: absolute;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.7);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: bg-mote var(--dur, 12s) ease-in-out var(--delay, 0s) infinite;
+}
+@keyframes bg-mote {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.6);
+  }
+  35% {
+    opacity: var(--peak, 0.6);
+  }
+  75% {
+    opacity: calc(var(--peak, 0.6) * 0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift, 12px), -110px, 0) scale(1);
+  }
+}
+
+/* reduced motion: keep a few faint, still hints of light instead of motion */
+@media (prefers-reduced-motion: reduce) {
+  .bg-sparkle,
+  .bg-mote {
+    animation: none;
+    opacity: calc(var(--peak, 0.6) * 0.35);
   }
 }

@@ -5,6 +5,7 @@ import ATS from '~/components/review/ATS';
 import Details from '~/components/review/Details';
 import Summary from '~/components/review/Summary';
 import Navbar from '~/components/layout/Navbar';
+import Footer from '~/components/layout/Footer';
 import AuroraBackground from '~/components/layout/AuroraBackground';
 import ScoreCircle from '~/components/score/ScoreCircle';
 import FixDeck from '~/components/review/FixDeck';
@@ -169,10 +170,10 @@ const Resume = () => {
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="relative overflow-hidden bg-[url('/images/bg-main-gloup.svg')] bg-cover">
+      <main className="relative overflow-clip bg-[url('/images/bg-main-gloup.svg')] bg-cover">
         <AuroraBackground />
 
-        <div className="relative">
+        <div className="relative flex min-h-screen flex-col">
           <Navbar />
 
           <div className="mx-auto w-full max-w-[1400px] px-4 pb-20 pt-8 sm:px-8">
@@ -222,7 +223,7 @@ const Resume = () => {
                   becomes score → tabs → resume.
                 */}
                 <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-12">
-                  <aside className="max-lg:contents lg:sticky lg:top-6 lg:flex lg:flex-col lg:gap-6">
+                  <aside className="max-lg:contents lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-6">
                     <AnimatePresence>
                       {status === 'ready' && feedback && verdict && (
                         <motion.div
@@ -288,7 +289,7 @@ const Resume = () => {
                           transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
                         >
                           {/* tab bar: sticks to the top while you scroll a panel */}
-                          <div ref={tabBarRef} className="sticky top-3 z-30 scroll-mt-3">
+                          <div ref={tabBarRef} className="sticky top-20 z-30 scroll-mt-24">
                             <div role="tablist" aria-label="Review sections" className="flex gap-1 overflow-x-auto rounded-full border border-border bg-surface/85 p-1 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl">
                               {tabs.map((t) => {
                                 const active = tab === t.key;
@@ -376,6 +377,7 @@ const Resume = () => {
               </>
             )}
           </div>
+          <Footer />
         </div>
       </main>
     </MotionConfig>

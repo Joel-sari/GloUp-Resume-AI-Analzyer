@@ -17,6 +17,8 @@ interface FSItem {
 interface PuterUser {
   uuid: string;
   username: string;
+  /** true for Puter's auto-created temporary accounts (random username, tied to this browser) */
+  is_temp?: boolean;
 }
 
 interface KVItem {

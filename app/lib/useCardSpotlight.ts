@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 
 /**
- * One pointer listener for the whole page: lights up the `.review-card`
+ * One pointer listener for the whole page: lights up the `.review-card` /
+ * `.spotlight-card`
  * under the cursor by setting --x / --y on it (see app.css). Mouse only,
  * and off for users who prefer reduced motion.
  */
@@ -12,7 +13,7 @@ export function useCardSpotlight() {
     let lit: HTMLElement | null = null;
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== "mouse") return;
-      const card = (e.target as Element | null)?.closest?.(".review-card") as HTMLElement | null;
+      const card = (e.target as Element | null)?.closest?.(".review-card, .spotlight-card") as HTMLElement | null;
       if (lit && lit !== card) lit.dataset.lit = "false";
       lit = card;
       if (!card) return;

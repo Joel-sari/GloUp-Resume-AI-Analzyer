@@ -17,7 +17,7 @@ export function meta() {
 }
 
 const HEADLINE = ["Give", "your", "resume", "the"];
-const HEADLINE_GRADIENT = ["glow", "up"];
+const HEADLINE_GRADIENT = ["Glow", "Up"];
 const HEADLINE_TAIL = ["it", "deserves."];
 
 const PERKS = [

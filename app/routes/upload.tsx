@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import FileUploader from "~/components/upload/FileUploader";
 import Navbar from "~/components/layout/Navbar";
+import Footer from "~/components/layout/Footer";
 import AuroraBackground from "~/components/layout/AuroraBackground";
 import AnalysisProgress, { type AnalysisStep } from "~/components/upload/AnalysisProgress";
 import { usePuterStore } from "~/lib/puter";
@@ -78,6 +79,11 @@ const Upload = () => {
 
   // clear the timer if the user navigates away mid-run
   useEffect(() => stopCreep, []);
+
+  // not signed in → sign in first, then come back here
+  useEffect(() => {
+    if (!isLoading && !auth.isAuthenticated) navigate("/auth?next=/upload");
+  }, [isLoading, auth.isAuthenticated, navigate]);
 
   // Advance the progress card to a named stage.
   const goToStep = (key: string, text: string) => {
@@ -168,7 +174,6 @@ const Upload = () => {
       setProgress(100);
       setStatusText("Analysis complete!");
 
-      console.log(resumeData);
       navigate(`/resume/${uuid}`);
     } catch (err) {
       console.error(err);
@@ -196,16 +201,15 @@ const Upload = () => {
 
 
 
-    console.log({ companyName, jobTitle, jobDescription });
     
   };
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="relative overflow-hidden bg-[url('/images/bg-main-gloup.svg')] bg-cover">
+      <main className="relative overflow-clip bg-[url('/images/bg-main-gloup.svg')] bg-cover">
         <AuroraBackground />
 
-        <div className="relative">
+        <div className="relative flex min-h-screen flex-col">
           <Navbar />
 
           <section className="main-section">
@@ -346,6 +350,7 @@ const Upload = () => {
               )}
             </AnimatePresence>
           </section>
+          <Footer />
         </div>
       </main>
     </MotionConfig>

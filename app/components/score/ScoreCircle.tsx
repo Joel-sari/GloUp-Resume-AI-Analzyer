@@ -2,7 +2,7 @@ import { useId } from "react";
 import { motion } from "motion/react";
 import AnimatedNumber from "~/components/ui/AnimatedNumber";
 
-const ScoreCircle = ({ score = 75 }: { score: number }) => {
+const ScoreCircle = ({ score = 75, size = 100 }: { score: number; size?: number }) => {
   const radius = 40;
   const stroke = 8;
   const normalizedRadius = radius - stroke / 2;
@@ -13,7 +13,7 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
   const gradientId = `score-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   return (
-    <div className="relative h-[100px] w-[100px]">
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg
         height="100%"
         width="100%"
@@ -54,10 +54,16 @@ const ScoreCircle = ({ score = 75 }: { score: number }) => {
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <AnimatedNumber value={score} className="text-lg font-bold leading-none text-ink" />
-        <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted">
-          / 100
-        </span>
+        <AnimatedNumber
+          value={score}
+          className={`font-bold leading-none text-ink ${size < 80 ? "text-base" : "text-lg"}`}
+        />
+        {/* "/ 100" only fits on the bigger rings */}
+        {size >= 80 && (
+          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-muted">
+            / 100
+          </span>
+        )}
       </div>
     </div>
   );

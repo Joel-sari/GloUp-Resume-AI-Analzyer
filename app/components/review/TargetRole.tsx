@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import CompanyLogo from '~/components/ui/CompanyLogo'
 
 interface TargetRoleProps {
   jobTitle?: string;
@@ -20,9 +21,7 @@ const TargetRole = ({ jobTitle, companyName, jobDescription }: TargetRoleProps) 
 
   const chip = (
     <>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full primary-gradient text-sm font-bold uppercase text-white">
-        {(company || title || '?').charAt(0)}
-      </span>
+      <CompanyLogo name={company || title} size={36} />
       <span className="flex min-w-0 flex-col text-left leading-tight">
         <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
           {label ? 'Target role' : 'General review'}

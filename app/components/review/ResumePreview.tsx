@@ -87,7 +87,7 @@ export const ResumePreview = ({ imageUrl, resumeUrl, score }: { imageUrl: string
           <img
             src={imageUrl}
             alt="Resume preview"
-            className="max-h-[78vh] w-full rounded-[20px] object-contain lg:max-h-[calc(100vh-19rem)] lg:w-auto"
+            className="max-h-[78vh] w-full rounded-[20px] object-contain lg:max-h-[calc(100vh-24rem)] lg:w-auto"
           />
 
           {/* light band that sweeps across once */}
